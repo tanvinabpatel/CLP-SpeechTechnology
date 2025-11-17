@@ -4,8 +4,11 @@ import csv
 # -----------------------------
 # User settings
 # -----------------------------
-input_folder = "/path/inputfolder"  # contains session subfolders
-mapping_csv = "/path/speaker_mapping.csv"
+groundlabels_folder = "outputfolder/groundlabels"  # folder containing all _gt.txt files
+mapping_csv = "speaker_mapping.csv"                # CSV mapping sessions to speaker IDs
+output_rttm_folder = "outputfolder/GTrttm3.1"    # where RTTM files will be saved
+
+os.makedirs(output_rttm_folder, exist_ok=True)
 
 # -----------------------------
 # Load mapping CSV
@@ -21,8 +24,6 @@ with open(mapping_csv, "r") as f:
             "P1": f"SPEAKER_{row['P1']}",
             "P2": f"SPEAKER_{row['P2']}"
         }
-
-
 
 # -----------------------------
 # Conversion function
@@ -49,7 +50,9 @@ def txt_to_rttm(txt_file, rttm_file, speaker_map):
             if label.lower() == "speaker_slp":
                 speaker_id = speaker_map["slp"]
             elif label.lower() == "speaker_ch":
-                speaker_id = speaker_map["ch"]
+                speaker_id = speaker_map["ch"]      # main child
+            elif label.lower == "speaker_ch2":
+                speaker_id = speaker_map["ch2"]     # new child
             elif label.lower() == "speaker_p1":
                 speaker_id = speaker_map["P1"]
             elif label.lower() == "speaker_p2":
@@ -65,24 +68,21 @@ def txt_to_rttm(txt_file, rttm_file, speaker_map):
             )
 
 # -----------------------------
-# Batch processing in session folders
+# Batch processing of all _gt.txt in groundlabels_folder
 # -----------------------------
-session_folders = [f for f in os.listdir(input_folder) if os.path.isdir(os.path.join(input_folder, f))]
+txt_files = [f for f in os.listdir(groundlabels_folder) if f.endswith("_gt.txt")]
 
-for session in session_folders:
-    session_path = os.path.join(input_folder, session)
-    if session not in mapping:
-        print(f"No speaker mapping for session {session}, skipping...")
+for txt_file in txt_files:
+    txt_path = os.path.join(groundlabels_folder, txt_file)
+
+    # Extract session from filename (assumes filename starts with session id)
+    session_name = txt_file.split("_")[0]
+    if session_name not in mapping:
+        print(f"No speaker mapping for session {session_name}, skipping {txt_file}...")
         continue
 
-    txt_files = [f for f in os.listdir(session_path) if f.endswith("_gt.txt")]
-    if not txt_files:
-        print(f"No _gt.txt files in {session}, skipping...")
-        continue
+    rttm_filename = txt_file.replace("_gt.txt", "_gt.rttm")
+    rttm_path = os.path.join(output_rttm_folder, rttm_filename)
 
-    for txt_file in txt_files:
-        txt_path = os.path.join(session_path, txt_file)
-        rttm_path = os.path.join(session_path, txt_file.replace("_gt.txt", "_gt.rttm"))
-
-        txt_to_rttm(txt_path, rttm_path, mapping[session])
-        print(f"Converted {txt_file} → {os.path.basename(rttm_path)}")
+    txt_to_rttm(txt_path, rttm_path, mapping[session_name])
+    print(f"Converted {txt_file} → {rttm_path}")
