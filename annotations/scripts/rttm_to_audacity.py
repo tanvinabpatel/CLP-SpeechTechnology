@@ -16,32 +16,26 @@ def rttm_to_audacity(rttm_file, output_label_file):
 
 
 def process_rttm_files(main_output_folder):
-    """Process all RTTM files in subfolders and create .txt label files for Audacity."""
-    for subfolder in sorted(os.listdir(main_output_folder)):
-        subfolder_path = os.path.join(main_output_folder, subfolder)
+    """Process all RTTM files and save Audacity labels in a single folder."""
+    audacity_folder = os.path.join(main_output_folder, "audacitylabels")
+    os.makedirs(audacity_folder, exist_ok=True)
 
-        if not os.path.isdir(subfolder_path):
+    rttm_root = os.path.join(main_output_folder, "rttm_py31")
+
+    for rttm_file in sorted(os.listdir(rttm_root)):
+        if not rttm_file.lower().endswith("_py.rttm"):
             continue
 
-        print(f"\n=== Processing folder: {subfolder} ===")
+        rttm_path = os.path.join(rttm_root, rttm_file)
+        output_label_path = os.path.join(audacity_folder, rttm_file.replace("_py.rttm", "_py.txt"))
 
-        # Find .rttm files
-        rttm_files = [f for f in os.listdir(subfolder_path) if f.lower().endswith("_py.rttm")]
-        if not rttm_files:
-            print(f"No RTTM files found in {subfolder}, skipping...")
-            continue
-
-        for rttm_file in rttm_files:
-            rttm_path = os.path.join(subfolder_path, rttm_file)
-            output_label_path = os.path.join(subfolder_path, rttm_file.replace("_py.rttm", "_py.txt"))
-
-            rttm_to_audacity(rttm_path, output_label_path)
-            print(f"Saved: {output_label_path}")
+        rttm_to_audacity(rttm_path, output_label_path)
+        print(f"Saved Audacity labels → {output_label_path}")
 
 
 # ------------------------------------------------------------------
 # Example usage
 # ------------------------------------------------------------------
 if __name__ == "__main__":
-    main_output_folder = "outputfolder"  # Change to your diarization output directory
+    main_output_folder = "outputfolder"  # Your diarization output directory
     process_rttm_files(main_output_folder)
