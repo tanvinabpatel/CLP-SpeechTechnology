@@ -26,52 +26,53 @@ def process_audio(input_path, output_path, target_sr=16000):
 
 def diarize_folder(main_input_folder, main_output_folder):
     """Process subfolders containing .wav files, convert, and diarize."""
-    for subfolder in sorted(os.listdir(main_input_folder)):
-        subfolder_path = os.path.join(main_input_folder, subfolder)
+    wav16_root = os.path.join(main_output_folder, "wav_16k")
+    rttm_root = os.path.join(main_output_folder, "rttm_py31")
 
-        # Skip if not a folder or already processed
-        if not os.path.isdir(subfolder_path) or subfolder.endswith("_done"):
-            print(f"Skipping {subfolder_path} (not a folder or already processed).")
+    os.makedirs(wav16_root, exist_ok=True)
+    os.makedirs(rttm_root, exist_ok=True)
+
+    for folder in sorted(os.listdir(main_input_folder)):
+        folder_path = os.path.join(main_input_folder, folder)
+
+        if not os.path.isdir(folder_path):
             continue
 
-        print(f"\n=== Processing folder: {subfolder} ===")
-
-        # Find WAV files
-        wav_files = [f for f in os.listdir(subfolder_path) if f.lower().endswith(".wav")]
+        wav_files = [f for f in os.listdir(folder_path) if f.lower().endswith(".wav")]
         if not wav_files:
-            print(f"No WAV file found in {subfolder}, skipping...")
             continue
 
-        # Create corresponding output subfolder
-        output_subfolder = os.path.join(main_output_folder, subfolder)
-        os.makedirs(output_subfolder, exist_ok=True)
+        print(f"\n=== Processing folder: {folder} ===")
 
         for wav_file in wav_files:
-            input_wav_path = os.path.join(subfolder_path, wav_file)
-            output_wav_path = os.path.join(output_subfolder, wav_file.replace(".wav", "_16k.wav"))
-            output_rttm_path = os.path.join(output_subfolder, wav_file.replace(".wav", "_py.rttm"))
+            inp = os.path.join(folder_path, wav_file)
 
-            print(f"→ Converting {wav_file} to 16kHz mono...")
-            process_audio(input_wav_path, output_wav_path)
+            # Make unified output filenames
+            base_name = f"{folder}_{wav_file.replace('.wav', '')}"
 
-            print(f"→ Running diarization on {wav_file}...")
+            out_wav_16k = os.path.join(wav16_root, base_name + "_16k.wav")
+            out_rttm = os.path.join(rttm_root, base_name + "_py.rttm")
+
+            print(f"→ Converting {wav_file} → 16kHz")
+            process_audio(inp, out_wav_16k)
+
+            print(f"→ Running diarization on {wav_file}")
             with ProgressHook() as hook:
-                diarization = pipeline(output_wav_path, hook=hook)
+                diarization = pipeline(out_wav_16k, hook=hook)
 
-            # Save RTTM
-            with open(output_rttm_path, "w") as f:
+            with open(out_rttm, "w") as f:
                 for turn, _, speaker in diarization.itertracks(yield_label=True):
                     f.write(
-                        f"SPEAKER {wav_file} 1 {turn.start:.2f} {turn.duration:.2f} "
+                        f"SPEAKER {base_name} 1 {turn.start:.2f} {turn.duration:.2f} "
                         f"<NA> <NA> {speaker} <NA> <NA>\n"
                     )
 
-            print(f"Saved RTTM → {output_rttm_path}")
+            print(f"Saved RTTM → {out_rttm}")
 
         # Rename processed folder to mark as done
-        new_subfolder_path = os.path.join(main_input_folder, subfolder + "_done")
-        os.rename(subfolder_path, new_subfolder_path)
-        print(f"Folder completed: {subfolder} → {subfolder}_done")
+        new_subfolder_path = os.path.join(main_input_folder, folder + "_done")
+        os.rename(folder_path, new_subfolder_path)
+        print(f"Folder completed: {folder} → {folder}_done")
 
 
 # ------------------------------------------------------------------
