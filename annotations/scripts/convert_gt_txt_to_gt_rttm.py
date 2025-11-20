@@ -4,9 +4,9 @@ import csv
 # -----------------------------
 # User settings
 # -----------------------------
-groundlabels_folder = "outputfolder/groundlabels"  # folder containing all _gt.txt files
-mapping_csv = "speaker_mapping.csv"                # CSV mapping sessions to speaker IDs
-output_rttm_folder = "outputfolder/GTrttm3.1"    # where RTTM files will be saved
+groundlabels_folder = "data/A1_68files/gt_10Oct"  # folder containing all _gt.txt files
+mapping_csv = "data/A1_68files/session_mapping_py31.csv"                # CSV mapping sessions to speaker IDs
+output_rttm_folder = "data/A1_68files/gt_rttm_py31"    # where RTTM files will be saved
 
 os.makedirs(output_rttm_folder, exist_ok=True)
 
@@ -22,13 +22,16 @@ with open(mapping_csv, "r") as f:
             "slp": f"SPEAKER_{row['slp']}",
             "ch": f"SPEAKER_{row['ch']}",
             "P1": f"SPEAKER_{row['P1']}",
-            "P2": f"SPEAKER_{row['P2']}"
+            "P2": f"SPEAKER_{row['P2']}",
+            "ch2": f"SPEAKER_{row['ch2']}"
+
         }
 
 # -----------------------------
 # Conversion function
 # -----------------------------
 def txt_to_rttm(txt_file, rttm_file, speaker_map):
+    #print(txt_file,rttm_file, speaker_map)
     """Convert a single Audacity GT TXT file to RTTM using speaker_map."""
     with open(txt_file, "r") as f_in, open(rttm_file, "w") as f_out:
         for line in f_in:
@@ -51,7 +54,7 @@ def txt_to_rttm(txt_file, rttm_file, speaker_map):
                 speaker_id = speaker_map["slp"]
             elif label.lower() == "speaker_ch":
                 speaker_id = speaker_map["ch"]      # main child
-            elif label.lower == "speaker_ch2":
+            elif label.lower() == "speaker_ch2":
                 speaker_id = speaker_map["ch2"]     # new child
             elif label.lower() == "speaker_p1":
                 speaker_id = speaker_map["P1"]
@@ -63,7 +66,7 @@ def txt_to_rttm(txt_file, rttm_file, speaker_map):
 
             audio_name = os.path.basename(rttm_file).replace("_gt.rttm", "")
             f_out.write(
-                f"SPEAKER audio_{audio_name} 1 {start_time:.2f} {duration:.2f} "
+                f"SPEAKER {audio_name} 1 {start_time:.2f} {duration:.2f} "
                 f"<NA> <NA> {speaker_id} <NA> <NA>\n"
             )
 
@@ -76,13 +79,14 @@ for txt_file in txt_files:
     txt_path = os.path.join(groundlabels_folder, txt_file)
 
     # Extract session from filename (assumes filename starts with session id)
-    session_name = txt_file.split("_")[0]
+    session_name = "_".join(txt_file.split("_")[:3])  # e.g., 'audio_10129759_2'
+    #print(txt_file,mapping)
     if session_name not in mapping:
         print(f"No speaker mapping for session {session_name}, skipping {txt_file}...")
         continue
 
     rttm_filename = txt_file.replace("_gt.txt", "_gt.rttm")
     rttm_path = os.path.join(output_rttm_folder, rttm_filename)
-
+    #print("oooo")
     txt_to_rttm(txt_path, rttm_path, mapping[session_name])
     print(f"Converted {txt_file} → {rttm_path}")
