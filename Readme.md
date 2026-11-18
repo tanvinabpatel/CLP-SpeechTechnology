@@ -12,7 +12,8 @@ The corrected annotations are used to extract the child's speech for VPC classif
 
 ## Repository contents
 
-- `protocol/` — the [manual annotation guidelines PDF](protocol/SpeakerDiarization%20Annotation%20Guidelines.pdf), the [Markdown guide](protocol/ANNOTATION_GUIDELINES.md), and supporting figures
+- `protocol/` — the [manual annotation guidelines PDF](protocol/SpeakerDiarization%20Annotation%20Guidelines.pdf)
+
 - `annotations/` — annotation scripts and Pyannote-to-Audacity conversion utilities
 
 ## Requirements
