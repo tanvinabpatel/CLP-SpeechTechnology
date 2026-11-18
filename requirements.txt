@@ -1,0 +1,9 @@
+pyannote.audio==3.1.*
+pyannote.metrics
+librosa
+soundfile
+torch
+pandas
+matplotlib
+seaborn
+openpyxl
